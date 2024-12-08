@@ -13,6 +13,7 @@ fn parse_line(line: &str) -> (usize, Vec<usize>) {
     (left_value, right_values)
 }
 
+#[derive(Copy, Clone)]
 enum Operation {
     Add,
     Mul,
@@ -20,31 +21,72 @@ enum Operation {
 }
 
 impl Operation {
-    fn apply(&self, a: usize, b: usize) -> usize {
+    fn unapply(&self, left: usize, right: usize) -> Option<usize> {
         match self {
-            Self::Add => a + b,
-            Self::Mul => a * b,
-            Self::Cat => format!("{}{}", a, b).parse::<usize>().unwrap(),
+            Self::Add => {
+                if right >= left {
+                    Some(right - left)
+                } else {
+                    None
+                }
+            }
+            Self::Mul => {
+                if right % left == 0 {
+                    Some(right / left)
+                } else {
+                    None
+                }
+            }
+            Self::Cat => {
+                let left_str = left.to_string();
+                let left_str_bytes = left_str.as_bytes();
+                let right_str = right.to_string();
+                let right_str_bytes = right_str.as_bytes();
+                if right_str_bytes.len() > left_str_bytes.len()
+                    && right_str_bytes.ends_with(left_str_bytes)
+                {
+                    let new_str = std::str::from_utf8(
+                        &right_str_bytes[0..right_str_bytes.len() - left_str_bytes.len()],
+                    )
+                    .unwrap();
+                    Some(new_str.parse::<usize>().unwrap())
+                } else {
+                    None
+                }
+            }
         }
     }
 }
 
-fn dfs(state: (usize, &[usize]), operations: &[Operation], target: usize) -> bool {
-    if state.0 > target {
-        return false;
+struct State<'a> {
+    target: usize,
+    values: &'a [usize],
+}
+
+impl State<'_> {
+    fn is_final(&self) -> bool {
+        self.values.len() == 1 && self.values[0] == self.target
     }
 
-    if state.1.is_empty() {
-        return state.0 == target;
+    fn next(&self, op: Operation) -> Option<Self> {
+        self.values.split_last().and_then(|(&val, rest)| {
+            op.unapply(val, self.target).map(|new_target| Self {
+                target: new_target,
+                values: rest,
+            })
+        })
+    }
+}
+
+fn dfs(state: &State, operations: &[Operation]) -> bool {
+    if state.is_final() {
+        return true;
     }
 
-    operations.iter().any(|op| {
-        dfs(
-            (op.apply(state.0, state.1[0]), &state.1[1..]),
-            operations,
-            target,
-        )
-    })
+    operations
+        .iter()
+        .filter_map(|&op| state.next(op))
+        .any(|s| dfs(&s, operations))
 }
 
 pub fn part1(input: &str) -> usize {
@@ -53,7 +95,13 @@ pub fn part1(input: &str) -> usize {
         .lines()
         .filter_map(|line| {
             let (target, values) = parse_line(line);
-            if dfs((values[0], &values[1..]), ops, target) {
+            if dfs(
+                &State {
+                    target,
+                    values: &values,
+                },
+                ops,
+            ) {
                 Some(target)
             } else {
                 None
@@ -68,7 +116,13 @@ pub fn part2(input: &str) -> usize {
         .lines()
         .filter_map(|line| {
             let (target, values) = parse_line(line);
-            if dfs((values[0], &values[1..]), ops, target) {
+            if dfs(
+                &State {
+                    target,
+                    values: &values,
+                },
+                ops,
+            ) {
                 Some(target)
             } else {
                 None
