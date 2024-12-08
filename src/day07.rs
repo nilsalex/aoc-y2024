@@ -1,3 +1,5 @@
+extern crate test;
+
 const INPUT: &str = include_str!("../inputs/day07.txt");
 
 fn parse_line(line: &str) -> (usize, Vec<usize>) {
@@ -136,4 +138,36 @@ pub fn main() {
 
     println!("{}", part1(input));
     println!("{}", part2(input));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    const TEST_INPUT: &str = include_str!("../test_inputs/day07.txt");
+
+    #[test]
+    fn test_part1() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part1(input), 3749);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part2(input), 11387);
+    }
+
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part1(input))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part2(input))
+    }
 }
