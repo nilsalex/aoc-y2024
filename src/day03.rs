@@ -1,3 +1,5 @@
+extern crate test;
+
 use regex::Regex;
 
 const INPUT: &str = include_str!("../inputs/day03.txt");
@@ -41,4 +43,37 @@ pub fn main() {
 
     println!("{}", part1(input));
     println!("{}", part2(input));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    const TEST_INPUT_1: &str = include_str!("../test_inputs/day03_part1.txt");
+    const TEST_INPUT_2: &str = include_str!("../test_inputs/day03_part2.txt");
+
+    #[test]
+    fn test_part1() {
+        let input = TEST_INPUT_1.trim_ascii_end();
+        assert_eq!(part1(input), 161);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = TEST_INPUT_2.trim_ascii_end();
+        assert_eq!(part2(input), 48);
+    }
+
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part1(input))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part2(input))
+    }
 }

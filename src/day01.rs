@@ -1,3 +1,5 @@
+extern crate test;
+
 const INPUT: &[u8] = include_bytes!("../inputs/day01.txt");
 
 const POWERS_OF_TEN: [i32; 6] = [1, 10, 100, 1000, 10000, 100000];
@@ -64,4 +66,36 @@ pub fn main() {
 
     println!("{}", part1(input));
     println!("{}", part2(input));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    const TEST_INPUT: &[u8] = include_bytes!("../test_inputs/day01.txt");
+
+    #[test]
+    fn test_part1() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part1(input), 11);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part2(input), 31);
+    }
+
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part1(input))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part2(input))
+    }
 }

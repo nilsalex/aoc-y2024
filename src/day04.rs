@@ -1,3 +1,5 @@
+extern crate test;
+
 const INPUT: &[u8] = include_bytes!("../inputs/day04.txt");
 
 #[derive(Debug)]
@@ -125,4 +127,36 @@ pub fn main() {
 
     println!("{}", part1(input));
     println!("{}", part2(input));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+
+    const TEST_INPUT: &[u8] = include_bytes!("../test_inputs/day04.txt");
+
+    #[test]
+    fn test_part1() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part1(input), 18);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = TEST_INPUT.trim_ascii_end();
+        assert_eq!(part2(input), 9);
+    }
+
+    #[bench]
+    fn bench_part1(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part1(input))
+    }
+
+    #[bench]
+    fn bench_part2(b: &mut Bencher) {
+        let input = INPUT.trim_ascii_end();
+        b.iter(|| part2(input))
+    }
 }
