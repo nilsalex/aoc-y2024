@@ -12,6 +12,7 @@ mod day07;
 mod day08;
 mod day09;
 mod day10;
+mod day11;
 
 pub fn main() {
     if let Some(day) = env::args().nth(1) {
@@ -26,6 +27,7 @@ pub fn main() {
             "08" => day08::main(),
             "09" => day09::main(),
             "10" => day10::main(),
+            "11" => day11::main(),
             _ => {
                 panic!("invalid argument for \"day\": {}", day)
             }
@@ -41,5 +43,6 @@ pub fn main() {
         day08::main();
         day09::main();
         day10::main();
+        day11::main();
     }
 }
