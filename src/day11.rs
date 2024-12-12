@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_part2() {
         let input = TEST_INPUT.trim_ascii_end();
-        assert_eq!(part2(input), 81);
+        assert_eq!(part2(input), 65601038650482);
     }
 
     #[bench]
