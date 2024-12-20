@@ -26,6 +26,71 @@ fn literal(operand: u8) -> usize {
     operand as usize
 }
 
+fn run_once(program: &[u8], a: usize) -> (usize, usize) {
+    let mut a = a;
+    let mut b = 0;
+    let mut c = 0;
+
+    let mut ix = 0;
+
+    while ix < program.len() {
+        let op = program[ix];
+        let operand = program[ix + 1];
+
+        match op {
+            0 => a = a >> combo(operand, a, b, c),
+            1 => {
+                b ^= literal(operand);
+            }
+            2 => {
+                b = combo(operand, a, b, c) & 0b111;
+            }
+            3 => {
+                if a != 0 {
+                    ix = literal(operand);
+                    continue;
+                }
+            }
+            4 => {
+                b ^= c;
+            }
+            5 => {
+                let out_val = combo(operand, a, b, c) & 0b111;
+                return (out_val, a);
+            }
+            6 => b = a >> combo(operand, a, b, c),
+            7 => c = a >> combo(operand, a, b, c),
+            _ => panic!(),
+        }
+
+        ix += 2;
+    }
+
+    panic!();
+}
+
+fn next(a: usize, x: usize, program: &[u8]) -> Vec<usize> {
+    let a = a << 3;
+
+    (0..8)
+        .map(|i| a ^ i)
+        .filter(|&b| run_once(program, b).0 == x)
+        .collect::<Vec<_>>()
+}
+
+fn dfs(a: usize, depth: usize, program: &[u8]) -> Option<usize> {
+    if depth == program.len() {
+        return Some(a);
+    }
+
+    let target = program[program.len() - depth - 1];
+
+    next(a, target as usize, program)
+        .iter()
+        .flat_map(|n| dfs(*n, depth + 1, program))
+        .next()
+}
+
 pub fn part1(input: &[u8]) -> String {
     let mut lines = input.split(|&b| b == b'\n');
 
@@ -85,13 +150,9 @@ pub fn part1(input: &[u8]) -> String {
 }
 
 pub fn part2(input: &[u8]) -> usize {
-    let mut lines = input.split(|&b| b == b'\n').skip(1);
-
-    let b0 = usize_from_bytes(lines.next().unwrap().split(|&b| b == b' ').nth(2).unwrap());
-    let c0 = usize_from_bytes(lines.next().unwrap().split(|&b| b == b' ').nth(2).unwrap());
-
-    let program = lines
-        .nth(1)
+    let program = input
+        .split(|&b| b == b'\n')
+        .nth(4)
         .unwrap()
         .split(|&b| b == b' ')
         .nth(1)
@@ -100,63 +161,7 @@ pub fn part2(input: &[u8]) -> usize {
         .map(|bs| bs[0] - b'0')
         .collect::<Vec<u8>>();
 
-    'outer: for a0 in 0_usize.. {
-        if a0 % 1000000 == 0 {
-            println!("{}", a0);
-        }
-
-        let mut a = a0;
-        let mut b = b0;
-        let mut c = c0;
-
-        let mut ix = 0;
-        let mut out = vec![];
-
-        while ix < program.len() {
-            let op = program[ix];
-            let operand = program[ix + 1];
-
-            match op {
-                0 => a = a >> combo(operand, a, b, c),
-                1 => {
-                    b ^= literal(operand);
-                }
-                2 => {
-                    b = combo(operand, a, b, c) % 8;
-                }
-                3 => {
-                    if a != 0 {
-                        ix = literal(operand);
-                        continue;
-                    }
-                }
-                4 => {
-                    b ^= c;
-                }
-                5 => {
-                    let out_val = (combo(operand, a, b, c) % 8) as u8;
-                    if out.len() >= program.len() {
-                        continue 'outer;
-                    }
-                    if program[out.len()] != out_val {
-                        continue 'outer;
-                    }
-                    out.push(out_val);
-                }
-                6 => b = a >> combo(operand, a, b, c),
-                7 => c = a >> combo(operand, a, b, c),
-                _ => panic!(),
-            }
-
-            ix += 2;
-        }
-
-        if out == program {
-            return a0;
-        }
-    }
-
-    panic!();
+    dfs(0, 0, &program).unwrap()
 }
 
 pub fn main() {
