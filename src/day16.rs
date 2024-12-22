@@ -153,8 +153,9 @@ fn dijkstra(
     grid: &Grid,
     start: ((isize, isize), Dir),
     end: ((isize, isize), Dir),
-) -> Option<usize> {
-    let mut dist: Vec<_> = (0..4 * grid.cells.len()).map(|_| usize::MAX).collect();
+) -> Option<(usize, Vec<Option<usize>>)> {
+    let mut dist = vec![usize::MAX; 4 * grid.cells.len()];
+    let mut prev = vec![None; 4 * grid.cells.len()];
     let mut heap = BinaryHeap::new();
 
     dist[to_dist_index(grid, &start)] = 0;
@@ -165,10 +166,12 @@ fn dijkstra(
 
     while let Some(State { cost, node }) = heap.pop() {
         if node == end {
-            return Some(cost);
+            return Some((cost, prev));
         }
 
-        if cost > dist[to_dist_index(grid, &node)] {
+        let node_index = to_dist_index(grid, &node);
+
+        if cost > dist[node_index] {
             continue;
         }
 
@@ -178,29 +181,17 @@ fn dijkstra(
                 node: edge.node,
             };
 
-            if next.cost < dist[to_dist_index(grid, &next.node)] {
+            let next_index = to_dist_index(grid, &next.node);
+
+            if next.cost < dist[next_index] {
                 heap.push(next);
-                dist[to_dist_index(grid, &next.node)] = next.cost;
+                dist[next_index] = next.cost;
+                prev[next_index] = Some(node_index);
             }
         }
     }
 
     None
-}
-
-fn floyd_warshall(grid: &Grid) -> Vec<usize> {
-    let num_vertices = grid.cells.len() * 4;
-    let mut dist = vec![usize::MAX; num_vertices * num_vertices];
-    for row in 0..grid.rows {
-        for col in 0..grid.cols {
-            if matches!(grid.get((row as isize, col as isize)), Cell::Empty) {
-                for dir in [Dir::Left, Dir::Right, Dir::Up, Dir::Down] {
-                    let node = ((row as isize, col as isize), dir);
-                }
-            }
-        }
-    }
-    dist
 }
 
 pub fn part1(input: &[u8]) -> usize {
@@ -211,6 +202,7 @@ pub fn part1(input: &[u8]) -> usize {
     [Dir::Left, Dir::Right, Dir::Up, Dir::Down]
         .into_iter()
         .filter_map(|dir| dijkstra(&grid, start, (grid.end, dir)))
+        .map(|res| res.0)
         .min()
         .unwrap()
 }
