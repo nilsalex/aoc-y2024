@@ -22,8 +22,11 @@ mod day17;
 mod day18;
 mod day19;
 mod day20;
+mod day21;
 mod day22;
 mod day23;
+mod day24;
+mod day25;
 
 pub fn main() {
     if let Some(day) = env::args().nth(1) {
@@ -48,8 +51,11 @@ pub fn main() {
             "18" => day18::main(),
             "19" => day19::main(),
             "20" => day20::main(),
+            "21" => day21::main(),
             "22" => day22::main(),
             "23" => day23::main(),
+            "24" => day24::main(),
+            "25" => day25::main(),
             _ => {
                 panic!("invalid argument for \"day\": {}", day)
             }
@@ -75,7 +81,10 @@ pub fn main() {
         day18::main();
         day19::main();
         day20::main();
+        day21::main();
         day22::main();
         day23::main();
+        day24::main();
+        day25::main();
     }
 }
