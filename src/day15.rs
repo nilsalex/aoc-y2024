@@ -1,5 +1,8 @@
 extern crate test;
 
+use std::collections::HashSet;
+use std::collections::VecDeque;
+
 const INPUT: &[u8] = include_bytes!("../inputs/day15.txt");
 
 #[derive(Debug, Clone, Copy)]
@@ -53,7 +56,7 @@ struct Grid {
     robot: (isize, isize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct WideGrid {
     cols: usize,
     cells: Vec<WideCell>,
@@ -203,14 +206,14 @@ impl WideGrid {
         self.cells[pos.0 as usize * self.cols + pos.1 as usize] = val
     }
 
-    //fn next_empty_pos(&self, pos: (isize, isize), dir: (isize, isize)) -> Option<(isize, isize)> {
-    //    let next_pos = (pos.0 + dir.0, pos.1 + dir.1);
-    //    match self.get(next_pos) {
-    //        Cell::Wall => None,
-    //        Cell::Empty => Some(next_pos),
-    //        Cell::Box => self.next_empty_pos(next_pos, dir),
-    //    }
-    //}
+    fn next_empty_pos(&self, pos: (isize, isize), dir: (isize, isize)) -> Option<(isize, isize)> {
+        let next_pos = (pos.0 + dir.0, pos.1 + dir.1);
+        match self.get(next_pos) {
+            WideCell::Wall => None,
+            WideCell::Empty => Some(next_pos),
+            WideCell::BoxLeft | WideCell::BoxRight => self.next_empty_pos(next_pos, dir),
+        }
+    }
 
     fn move_robot(&mut self, dir: (isize, isize)) {
         let next_pos = (self.robot.0 + dir.0, self.robot.1 + dir.1);
@@ -220,14 +223,91 @@ impl WideGrid {
             WideCell::Wall => {}
             WideCell::Empty => self.robot = next_pos,
             WideCell::BoxLeft | WideCell::BoxRight => {
-                //if dir.1 == 0 {
-                //} else {
-                //}
-                //if let Some(next_empty_pos) = self.next_empty_pos(next_pos, dir) {
-                //    self.robot = next_pos;
-                //    self.set(next_pos, Cell::Empty);
-                //    self.set(next_empty_pos, Cell::Box);
-                //}
+                if dir.0 == 0 {
+                    if let Some(next_empty_pos) = self.next_empty_pos(next_pos, dir) {
+                        let mut update_pos = next_empty_pos;
+                        while update_pos != next_pos {
+                            let prev_pos = (update_pos.0, update_pos.1 - dir.1);
+                            self.set(update_pos, self.get(prev_pos));
+                            update_pos = prev_pos;
+                        }
+                        self.robot = next_pos;
+                        self.set(next_pos, WideCell::Empty);
+                    }
+                } else {
+                    let mut queue = VecDeque::new();
+                    let mut visited = HashSet::new();
+                    let mut to_move = vec![];
+
+                    match next_val {
+                        WideCell::BoxLeft => queue.push_back(next_pos),
+                        WideCell::BoxRight => queue.push_back((next_pos.0, next_pos.1 - 1)),
+                        _ => panic!(),
+                    }
+
+                    while let Some(box_pos) = queue.pop_front() {
+                        if visited.contains(&box_pos) {
+                            continue;
+                        }
+
+                        visited.insert(box_pos);
+
+                        to_move.push(box_pos);
+
+                        let next_pos_0 = (box_pos.0 + dir.0, box_pos.1 - 1);
+                        let next_pos_1 = (box_pos.0 + dir.0, box_pos.1);
+                        let next_pos_2 = (box_pos.0 + dir.0, box_pos.1 + 1);
+
+                        let next_val_1 = self.get(next_pos_1);
+                        let next_val_2 = self.get(next_pos_2);
+
+                        match (next_val_1, next_val_2) {
+                            (WideCell::Wall, _) => {
+                                return;
+                            }
+                            (_, WideCell::Wall) => {
+                                return;
+                            }
+                            (WideCell::Empty, WideCell::Empty) => {
+                                continue;
+                            }
+                            (WideCell::Empty, WideCell::BoxLeft) => {
+                                queue.push_back(next_pos_2);
+                            }
+                            (WideCell::Empty, WideCell::BoxRight) => {
+                                panic!();
+                            }
+                            (WideCell::BoxLeft, WideCell::Empty) => {
+                                panic!();
+                            }
+                            (WideCell::BoxRight, WideCell::Empty) => {
+                                queue.push_back(next_pos_0);
+                            }
+                            (WideCell::BoxLeft, WideCell::BoxLeft) => {
+                                panic!();
+                            }
+                            (WideCell::BoxLeft, WideCell::BoxRight) => {
+                                queue.push_back(next_pos_1);
+                            }
+                            (WideCell::BoxRight, WideCell::BoxLeft) => {
+                                queue.push_back(next_pos_0);
+                                queue.push_back(next_pos_2);
+                            }
+                            (WideCell::BoxRight, WideCell::BoxRight) => {
+                                panic!();
+                            }
+                        }
+                    }
+
+                    while let Some(box_pos) = to_move.pop() {
+                        self.set((box_pos.0 + dir.0, box_pos.1), WideCell::BoxLeft);
+                        self.set((box_pos.0 + dir.0, box_pos.1 + 1), WideCell::BoxRight);
+                        self.set((box_pos.0, box_pos.1), WideCell::Empty);
+                        self.set((box_pos.0, box_pos.1 + 1), WideCell::Empty);
+                    }
+
+                    self.robot = next_pos;
+                }
             }
         }
     }
